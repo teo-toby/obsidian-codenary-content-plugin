@@ -1,0 +1,5 @@
+{
+    "extends": [
+        "./node_modules/@wanteddev/wanted-node-config/.eslintrc.base.json"
+    ]
+}

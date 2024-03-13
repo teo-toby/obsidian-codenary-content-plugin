@@ -6,4 +6,4 @@ export const ObsidianRegex = {
 	SIMPLE_FOOTNOTE: /\[\^(\d+)]/g,
 	COMMENT: /%%(.*?)%%/g,
 	DOUBLE_CURLY_BRACES: /{{(.*?)}}/g,
-  } as const;
+} as const
