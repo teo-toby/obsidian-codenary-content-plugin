@@ -1,12 +1,9 @@
 import { Temporal } from '@js-temporal/polyfill'
 import O2Plugin from '../main'
 import * as fs from 'fs'
-import * as path from 'path'
 import { Editor, Notice, TFile } from 'obsidian'
 import { vaultAbsolutePath } from '../utils'
 import { ConverterChain } from '../core/ConverterChain'
-import { FilenameConverter } from './FilenameConverter'
-import { FrontMatterConverter } from './FrontMatterConverter'
 import axios from 'axios'
 import CodenaryContentPlugin from '../main'
 
@@ -56,12 +53,10 @@ export async function convertToChirpy(plugin: O2Plugin) {
 	await validateSettings(plugin)
 	await backupOriginalNotes(plugin)
 
-	const filenameConverter = new FilenameConverter()
 
 	try {
 		const markdownFiles = await renameMarkdownFile(plugin)
 		for (const file of markdownFiles) {
-			const fileName = filenameConverter.convert(file.name)
 
 			const result = ConverterChain.create()
 			// .chaining(frontMatterConverter)
@@ -103,27 +98,4 @@ async function validateSettings(plugin: CodenaryContentPlugin) {
 function getFilesInContentsFolder(plugin: O2Plugin): TFile[] {
 	return plugin.app.vault.getMarkdownFiles()
 		.filter((file: TFile) => file.path.startsWith(plugin.settings.contentFolder))
-}
-
-async function backupOriginalNotes(plugin: O2Plugin) {
-	const readyFiles = getFilesInContentsFolder.call(this, plugin)
-	const backupFolder = plugin.settings.contentFolder
-	const readyFolder = plugin.settings.contentFolder
-	readyFiles.forEach((file: TFile) => {
-		return plugin.app.vault.copy(file, file.path.replace(readyFolder, backupFolder))
-	})
-}
-
-// FIXME: SRP, renameMarkdownFile(file: TFile): string
-async function renameMarkdownFile(plugin: O2Plugin): Promise<TFile[]> {
-	const dateString = Temporal.Now.plainDateISO().toString()
-	const markdownFiles = getFilesInContentsFolder.call(this, plugin)
-	for (const file of markdownFiles) {
-		const newFileName = dateString + '-' + file.name
-		const newFilePath = file.path
-			.replace(file.name, newFileName)
-			.replace(/\s/g, '-')
-		await plugin.app.vault.rename(file, newFilePath)
-	}
-	return markdownFiles
 }

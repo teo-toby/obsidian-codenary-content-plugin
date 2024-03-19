@@ -42,16 +42,27 @@ export class SubmitConfirmModal extends Modal {
 	}
 
 	createUI(contentEl: HTMLElement) {
-		new Setting(contentEl)
-			.setName('Your Codenary Account Token')
-			.setDesc('마이페이지에서 생성한 토큰 입력')
-			.addText(text => text
-				.setPlaceholder('Enter user token')
-				.setValue(this.plugin.settings.userToken)
-				.onChange(async (value) => {
-					this.plugin.settings.userToken = value
-					await this.plugin.saveSettings()
-				}))
+		// new Setting(contentEl)
+		// 	.setName('Your Codenary Account Token')
+		// 	.setDesc('마이페이지에서 생성한 토큰 입력')
+		// 	.addText(text => text
+		// 		.setPlaceholder('Enter user token')
+		// 		.setValue(this.plugin.settings.userToken)
+		// 		.onChange(async (value) => {
+		// 			this.plugin.settings.userToken = value
+		// 			await this.plugin.saveSettings()
+		// 		}))
+
+		// new Setting(contentEl)
+		// 	.setName('Folder to store attachments in')
+		// 	.setDesc('Where the attachments will be stored.')
+		// 	.addText(text => text
+		// 		.setPlaceholder('Enter folder name')
+		// 		.setValue(this.plugin.settings.attachmentsFolder)
+		// 		.onChange(async (value) => {
+		// 			this.plugin.settings.attachmentsFolder = value
+		// 			await this.plugin.saveSettings()
+		// 		}))
 
 		// buttons
 		new Setting(contentEl)
@@ -64,23 +75,12 @@ export class SubmitConfirmModal extends Modal {
 				btn.setButtonText('Publish')
 				btn.onClick(() => this.handleSubmit())
 			})
-
-		new Setting(contentEl)
-			.setName('Folder to store attachments in')
-			.setDesc('Where the attachments will be stored.')
-			.addText(text => text
-				.setPlaceholder('Enter folder name')
-				.setValue(this.plugin.settings.attachmentsFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.attachmentsFolder = value
-					await this.plugin.saveSettings()
-				}))
 	}
 
 	async onOpen() {
 		const { contentEl } = this
 		contentEl.classList?.add('steem-plugin')
-		contentEl.createEl('h2', { text: 'Publish to steemit' })
+		contentEl.createEl('h2', { text: 'Publish to Codenary' })
 		const loading = CustomLoadingComponent(contentEl)
 		this.createUI(contentEl)
 		loading.remove()

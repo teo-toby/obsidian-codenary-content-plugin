@@ -5,12 +5,16 @@ import axios from 'axios'
 import { SubmitConfirmModal } from 'src/ui/submit_confirm_modal'
 import { vaultAbsolutePath } from 'src/utils'
 import * as fs from 'fs'
-import { v4 } from 'uuid'
+import { CreateTemplateModal } from 'src/ui/create_template_modal'
 
 export const frontmatterRegex = /^---\n(?:((?!---)(.|\n)*?)\n)?---(\n|$)/
 
 export default class CodenaryContentPlugin extends Plugin {
-	settings: CodenaryContentPluginSettings
+	private _settings?: CodenaryContentPluginSettings
+
+	get settings() {
+		return this._settings
+	}
 
 	async onload() {
 		await this.loadSettings()
@@ -19,40 +23,42 @@ export default class CodenaryContentPlugin extends Plugin {
 			id: 'obsidian-codenary-content-publish',
 			name: 'Publish to Codenary',
 			callback: () => this.publishCodenaryContent(),
-		  })
-
+		})
+		console.log('1')
 		this.addCommand({
 			id: 'obsidian-codenary-content-create',
 			name: 'Create Codenary Content Template',
-			callback: () => this.createCodenaryContentTemplate(this),
+			callback: () => this.createTemplate(),
 		})
+		console.log('2')
 
 		this.addSettingTab(new CodenaryContentSettingTab(this.app, this))
-
-	}
-
-	onunload() {
+		console.log('3')
 
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign(new CodenaryContentSetting(), await this.loadData())
+		this._settings = Object.assign(new CodenaryContentSetting(), await this.loadData())
 	}
 
 	async saveSettings() {
-		await this.saveData(this.settings)
+		await this.saveData(this._settings)
 	}
 
-	async createCodenaryContentTemplate(plugin: CodenaryContentPlugin) {
-		const uuid = v4()
-		const targetFilePath = `${(vaultAbsolutePath(plugin))}/${this.settings.contentFolder}/${uuid}.md`
+	createCodenaryContentTemplate(plugin: CodenaryContentPlugin, title: string) {
+		console.log('========')
+		const contentFolder = this.settings?.contentFolder || 'codenary'
+		const now = new Date()
+		const titleArr = title.split(' ')
+		const filename = titleArr.join('_')
+		const targetFilePath = `${(vaultAbsolutePath(plugin))}/${contentFolder}/${filename}.md`
 
 		const text = `---\n${stringifyYaml({
-			title: '제목을 입력해주세요.',
+			title: title,
 			tags: [ 'Tag1', 'Tag2' ],
-			created_at: '2024-03-13T14:03:00',
-			content_uuid: uuid,
-			techstack: [ 'typescript', 'javascript' ],
+			created_at: now,
+			content_uid: now.valueOf(),
+			techstacks: [ 'typescript', 'javascript' ],
 		})}---\n`
 
 		fs.writeFile(targetFilePath, text, (err) => {
@@ -66,22 +72,36 @@ export default class CodenaryContentPlugin extends Plugin {
 
 	async publishCodenaryContent() {
 		try {
-		  const activeView = this.getActiveView()
-		  const file = activeView.file
-		  if (!file) {
+			const activeView = this.getActiveView()
+			const file = activeView.file
+			if (!file) {
 				throw new Error('There is no active file.')
-		  }
+			}
 
-		  const post = await this.parsePostData(file)
-		  if (!post.text) {
+			const post = await this.parsePostData(file)
+			if (!post.text) {
 				throw new Error('Content is empty.')
-		  }
+			}
 
-		  new SubmitConfirmModal(this, post, async (post: CodenaryContent) => {
+			new SubmitConfirmModal(this, post, async (post: CodenaryContent) => {
 				await this.addCodenaryContent(post)
-		  }).open()
+			}).open()
 		} catch (e: any) {
-		  new Notice(e.toString())
+			new Notice(e.toString())
+		}
+	}
+
+	async createTemplate() {
+		console.log('-----------1')
+		try {
+			console.log('-----------2')
+			new CreateTemplateModal(this, (title: string) => {
+				this.createCodenaryContentTemplate(this, title)
+			}).open()
+			console.log('-----------3')
+		} catch (e: any) {
+			console.log('||||||||||||')
+			new Notice(e.toString())
 		}
 	}
 
@@ -137,38 +157,25 @@ export default class CodenaryContentPlugin extends Plugin {
 			  const textInsideBrackets = linkMatch.substring(
 						linkMatch.indexOf('[') + 2,
 						linkMatch.lastIndexOf(']') - 1,
-			  )
-			  let [ linkedFileName, prettyName ] = textInsideBrackets.split('|')
+					)
+					let [ linkedFileName, prettyName ] = textInsideBrackets.split('|')
 
-			  prettyName = prettyName || linkedFileName
-			  if (linkedFileName.includes('#')) {
+					prettyName = prettyName || linkedFileName
+					if (linkedFileName.includes('#')) {
 						const headerSplit = linkedFileName.split('#')
 						linkedFileName = headerSplit[0]
-			  }
-			  const linkedFile = this.app.metadataCache.getFirstLinkpathDest(
+					}
+					const linkedFile = this.app.metadataCache.getFirstLinkpathDest(
 						getLinkpath(linkedFileName),
 						filePath,
-			  )
-			  if (!linkedFile) {
+					)
+					if (!linkedFile) {
 						// 내부 파일 링크가 없는 경우 prettyName만 표시한다.
 						result = result.replace(linkMatch, prettyName)
-			  }
-			  if (linkedFile?.extension === 'md') {
-						const frontmatter = this.app.metadataCache.getFileCache(linkedFile)?.frontmatter
-						if (frontmatter && 'permlink' in frontmatter) {
-				  const { permlink, title } = frontmatter
-				  result = result.replace(
-								linkMatch,
-								`[${title || prettyName}](/@${this.settings?.username ?? ''}/${permlink})`,
-				  )
-						} else {
-				  // 내부 파일 링크가 tistoryPostUrl이 없는 경우 prettyName만 표시한다.
-				  result = result.replace(linkMatch, prettyName)
-						}
-			  }
+					}
+
 				} catch (e) {
-			  console.log(e)
-			  continue
+					continue
 				}
 		  }
 		}

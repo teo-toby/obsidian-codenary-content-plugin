@@ -1,25 +1,21 @@
 import { App, Notice, PluginSettingTab, Setting } from 'obsidian'
-import O2Plugin from './main'
 import CodenaryContentPlugin from './main'
 
 export interface CodenaryContentPluginSettings {
 	attachmentsFolder: string;
 	contentFolder: string;
-	userToken: string
-	username: string
+	userToken?: string
 }
 
 export class CodenaryContentSetting implements CodenaryContentPluginSettings {
 	attachmentsFolder: string
 	contentFolder: string
 	userToken: string
-	username: string
 
 	constructor() {
 		this.attachmentsFolder = 'attachments'
-		this.contentFolder = 'contents'
+		this.contentFolder = 'codenary'
 		this.userToken = ''
-		this.username = ''
 	}
 
 }
@@ -31,6 +27,13 @@ export class CodenaryContentSettingTab extends PluginSettingTab {
 		super(app, plugin)
 		this.plugin = plugin
 	}
+
+	async saveSettings(name: keyof CodenaryContentPluginSettings, value: string) {
+		if (this.plugin.settings && this.plugin.settings[name] !== value) {
+		  this.plugin.settings[name] = value
+		  await this.plugin.saveSettings()
+		}
+	  }
 
 	display(): void {
 		this.containerEl.empty()
@@ -46,7 +49,6 @@ export class CodenaryContentSettingTab extends PluginSettingTab {
 			text: 'User Settings',
 		})
 		this.addUserTokenSetting()
-		this.addUsernameSetting()
 	}
 
 	private addUserTokenSetting() {
@@ -55,23 +57,9 @@ export class CodenaryContentSettingTab extends PluginSettingTab {
 			.setDesc('마이페이지에서 생성한 토큰 입력')
 			.addText(text => text
 				.setPlaceholder('Enter user token')
-				.setValue(this.plugin.settings.userToken)
+				.setValue(this.plugin.settings?.userToken || '')
 				.onChange(async (value) => {
-					this.plugin.settings.userToken = value
-					await this.plugin.saveSettings()
-				}))
-	}
-
-	private addUsernameSetting() {
-		new Setting(this.containerEl)
-			.setName('Your Username')
-			.setDesc('username')
-			.addText(text => text
-				.setPlaceholder('Enter username')
-				.setValue(this.plugin.settings.username)
-				.onChange(async (value) => {
-					this.plugin.settings.username = value
-					await this.plugin.saveSettings()
+					this.saveSettings('userToken', value)
 				}))
 	}
 
@@ -81,10 +69,9 @@ export class CodenaryContentSettingTab extends PluginSettingTab {
 			.setDesc('Where the attachments will be stored.')
 			.addText(text => text
 				.setPlaceholder('Enter folder name')
-				.setValue(this.plugin.settings.attachmentsFolder)
+				.setValue(this.plugin.settings?.attachmentsFolder || 'attachments')
 				.onChange(async (value) => {
-					this.plugin.settings.attachmentsFolder = value
-					await this.plugin.saveSettings()
+					this.saveSettings('attachmentsFolder', value)
 				}))
 	}
 
@@ -94,10 +81,9 @@ export class CodenaryContentSettingTab extends PluginSettingTab {
 			.setDesc('Where the contents will be stored.')
 			.addText(text => text
 				.setPlaceholder('Enter folder name')
-				.setValue(this.plugin.settings.contentFolder)
+				.setValue(this.plugin.settings?.contentFolder || 'codenary')
 				.onChange(async (value) => {
-					this.plugin.settings.contentFolder = value
-					await this.plugin.saveSettings()
+					this.saveSettings('contentFolder', value)
 				}))
 	}
 

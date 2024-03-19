@@ -20,7 +20,6 @@ export class ExampleView extends ItemView {
 		container.empty()
 
 		const result = await fetch('http://localhost:8000/techblogs?page=1')
-		console.log(result)
 		const blogs = await result.json()
 		for (const blog of blogs) {
 			container.createEl('h4', { text: blog.title })
