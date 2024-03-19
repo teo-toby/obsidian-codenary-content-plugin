@@ -1,11 +1,12 @@
 import { FrontMatterCache, getLinkpath, MarkdownView, Notice, Plugin, stringifyYaml,
 	TFile } from 'obsidian'
 import { CodenaryContentPluginSettings, CodenaryContentSetting, CodenaryContentSettingTab } from './settings'
-import axios from 'axios'
 import { SubmitConfirmModal } from 'src/ui/submit_confirm_modal'
 import { vaultAbsolutePath } from 'src/utils'
 import * as fs from 'fs'
 import { CreateTemplateModal } from 'src/ui/create_template_modal'
+import { CodenaryContent } from 'src/types'
+import { CodenaryClient } from 'src/codenary-client'
 
 export const frontmatterRegex = /^---\n(?:((?!---)(.|\n)*?)\n)?---(\n|$)/
 
@@ -24,17 +25,12 @@ export default class CodenaryContentPlugin extends Plugin {
 			name: 'Publish to Codenary',
 			callback: () => this.publishCodenaryContent(),
 		})
-		console.log('1')
 		this.addCommand({
 			id: 'obsidian-codenary-content-create',
 			name: 'Create Codenary Content Template',
 			callback: () => this.createTemplate(),
 		})
-		console.log('2')
-
 		this.addSettingTab(new CodenaryContentSettingTab(this.app, this))
-		console.log('3')
-
 	}
 
 	async loadSettings() {
@@ -46,7 +42,6 @@ export default class CodenaryContentPlugin extends Plugin {
 	}
 
 	createCodenaryContentTemplate(plugin: CodenaryContentPlugin, title: string) {
-		console.log('========')
 		const contentFolder = this.settings?.contentFolder || 'codenary'
 		const now = new Date()
 		const titleArr = title.split(' ')
@@ -92,15 +87,11 @@ export default class CodenaryContentPlugin extends Plugin {
 	}
 
 	async createTemplate() {
-		console.log('-----------1')
 		try {
-			console.log('-----------2')
 			new CreateTemplateModal(this, (title: string) => {
 				this.createCodenaryContentTemplate(this, title)
 			}).open()
-			console.log('-----------3')
 		} catch (e: any) {
-			console.log('||||||||||||')
 			new Notice(e.toString())
 		}
 	}
@@ -120,18 +111,13 @@ export default class CodenaryContentPlugin extends Plugin {
 		  this.removeObsidianComments(this.stripFrontmatter(fileContent)),
 		  file.path,
 		)
-		console.log(frontMatter)
 		const title = frontMatter?.title
 		return {
+			type_id: frontMatter?.content_uid,
 			title: title,
-			summary: body.slice(0, 50),
 			text: body,
-			user_id: '9cc4a239-e240-40b4-a2c3-3c79a4929dae',
-			image_url: null,
-			tags: [ 'test1', 'test2' ],
-			techstack_ids: [ 'typescript' ],
-			duration: 60000,
-			url: 'https://codenary.co.kr',
+			tags: frontMatter?.tags || [],
+			techstack_ids: [],
 			origin_at: new Date().valueOf(),
 
 		}
@@ -188,34 +174,14 @@ export default class CodenaryContentPlugin extends Plugin {
 	  }
 
 	async addCodenaryContent(content: CodenaryContent) {
-		await axios.post('http://localhost:8000/admin/batches/contents/add-content-batch', {
-			type: 'manual',
-			type_id: '2',
-			title: content.title,
-			summary: content.summary,
-			text: content.text,
-			user_id: content.user_id,
-			image_url: content.image_url,
-			tags: content.tags,
-			techstack_ids: content.techstack_ids,
-			duration: content.duration,
-			url: content.url,
-			origin_at: content.origin_at,
-
-		})
+		const userToken = this.settings?.userToken
+		if (!userToken) {
+			new Notice('User Token Required')
+		} else {
+			const client = new CodenaryClient(userToken)
+			const result = client.publishContent(content)
+			console.log(result)
+			new Notice('Upload Succces')
+		}
 	}
-}
-
-export interface CodenaryContent {
-	title: string,
-	summary: string,
-	text: string,
-	user_id: string,
-	image_url: string | null,
-	tags: string[],
-	techstack_ids: string[],
-	duration: number,
-	url: string,
-	origin_at: number,
-
 }

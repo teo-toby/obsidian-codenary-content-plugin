@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 import { Modal, Notice, Setting } from 'obsidian'
 
-import { CodenaryContent } from '../main'
+import { CodenaryContent } from '../types'
 import CustomLoadingComponent from './loading_component'
 import CodenaryContentPlugin from '../main'
 
@@ -14,16 +14,10 @@ export class SubmitConfirmModal extends Modal {
 		readonly callback: (variables: CodenaryContent) => void,
 	) {
 		super(plugin.app)
-		this.initializePostOptions()
-	}
-
-	// postOptions 초기화
-	private initializePostOptions() {
-
 	}
 
 	validateRequiredFields() {
-		const requiredFields: Array<keyof CodenaryContent> = [ 'title', 'tags' ]
+		const requiredFields: Array<keyof CodenaryContent> = [ 'title', 'origin_at' ]
 		for (const field of requiredFields) {
 			if (!this.postData[field]) {
 				new Notice(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`)
@@ -42,37 +36,14 @@ export class SubmitConfirmModal extends Modal {
 	}
 
 	createUI(contentEl: HTMLElement) {
-		// new Setting(contentEl)
-		// 	.setName('Your Codenary Account Token')
-		// 	.setDesc('마이페이지에서 생성한 토큰 입력')
-		// 	.addText(text => text
-		// 		.setPlaceholder('Enter user token')
-		// 		.setValue(this.plugin.settings.userToken)
-		// 		.onChange(async (value) => {
-		// 			this.plugin.settings.userToken = value
-		// 			await this.plugin.saveSettings()
-		// 		}))
-
-		// new Setting(contentEl)
-		// 	.setName('Folder to store attachments in')
-		// 	.setDesc('Where the attachments will be stored.')
-		// 	.addText(text => text
-		// 		.setPlaceholder('Enter folder name')
-		// 		.setValue(this.plugin.settings.attachmentsFolder)
-		// 		.onChange(async (value) => {
-		// 			this.plugin.settings.attachmentsFolder = value
-		// 			await this.plugin.saveSettings()
-		// 		}))
-
-		// buttons
 		new Setting(contentEl)
 			.addButton(btn => {
-				btn.setButtonText('Cancel')
+				btn.setButtonText('취소')
 				btn.onClick(() => this.close())
 			})
 			.addButton(btn => {
 				btn.setCta()
-				btn.setButtonText('Publish')
+				btn.setButtonText('등록')
 				btn.onClick(() => this.handleSubmit())
 			})
 	}
