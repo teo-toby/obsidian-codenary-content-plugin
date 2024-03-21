@@ -5,5 +5,4 @@ export interface CodenaryContent {
 	tags: string[],
 	techstack_ids: string[],
 	origin_at: number,
-
 }

@@ -1,7 +1,8 @@
 import { request } from 'obsidian'
 import { CodenaryContent } from 'src/types'
+import axios from 'axios'
 
-const API_URL = 'https://api-dev.codenary.co.kr'
+const API_URL = 'http://localhost:8000'
 
 export class CodenaryClient {
 	private readonly userToken: string
@@ -23,12 +24,20 @@ export class CodenaryClient {
 	}
 
 	async publishContent(post: CodenaryContent) {
-		const result = await request({ url: `${API_URL}/contents/obsidians`, method: 'POST',
-			body: JSON.stringify({
-				...post,
-				user_token: this.userToken,
-			}) })
-		const json = JSON.parse(result)
-		return json
+		console.log(post)
+		console.log(this.userToken)
+
+		const result = await axios.post(`${API_URL}/contents/obsidians`, {
+			...post,
+			user_token: this.userToken,
+		})
+		return result.data
+		// const result = await request({ url: `${API_URL}/contents/obsidians`, method: 'POST',
+		// 	body: JSON.stringify({
+		// 		...post,
+		// 		user_token: this.userToken,
+		// 	}) })
+		// const json = JSON.parse(result)
+		// return json
 	}
 }

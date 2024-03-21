@@ -44,8 +44,11 @@ export default class CodenaryContentPlugin extends Plugin {
 	createCodenaryContentTemplate(plugin: CodenaryContentPlugin, title: string) {
 		const contentFolder = this.settings?.contentFolder || 'codenary'
 		const now = new Date()
-		const titleArr = title.split(' ')
-		const filename = titleArr.join('_')
+		let filename = title
+		const splitSpace = title.split(' ')
+		filename = splitSpace.join('_')
+		const splitSlash = filename.split('/')
+		filename = splitSlash.join('_')
 		const targetFilePath = `${(vaultAbsolutePath(plugin))}/${contentFolder}/${filename}.md`
 
 		const text = `---\n${stringifyYaml({
@@ -69,11 +72,14 @@ export default class CodenaryContentPlugin extends Plugin {
 		try {
 			const activeView = this.getActiveView()
 			const file = activeView.file
+			const createdAt = file?.stat.ctime
+			console.log(file)
 			if (!file) {
 				throw new Error('There is no active file.')
 			}
 
 			const post = await this.parsePostData(file)
+			console.log(post)
 			if (!post.text) {
 				throw new Error('Content is empty.')
 			}
@@ -113,7 +119,7 @@ export default class CodenaryContentPlugin extends Plugin {
 		)
 		const title = frontMatter?.title
 		return {
-			type_id: frontMatter?.content_uid,
+			type_id: frontMatter?.content_uid.toString(),
 			title: title,
 			text: body,
 			tags: frontMatter?.tags || [],

@@ -13,11 +13,9 @@ export class CreateTemplateModal extends Modal {
 		readonly callback: (title: string) => void,
 	) {
 		super(plugin.app)
-		console.log('++++++1')
 	}
 
 	validateRequiredFields() {
-		console.log('++++++2')
 		if (!this.title || this.title.trim() === '') {
 			new Notice('제목을 입력해주세요.')
 			return false
@@ -26,7 +24,6 @@ export class CreateTemplateModal extends Modal {
 	}
 
 	async handleSubmit() {
-		console.log('++++++3')
 		if (this.validateRequiredFields()) {
 			this.callback(this.title)
 			this.close()
@@ -34,7 +31,6 @@ export class CreateTemplateModal extends Modal {
 	}
 
 	createUI(contentEl: HTMLElement) {
-		console.log('++++++4')
 		new Setting(contentEl)
 			.setName('제목을 입력해주세요.')
 			.setDesc('작성하실 컨텐츠의 제목을 입력해주세요.')
