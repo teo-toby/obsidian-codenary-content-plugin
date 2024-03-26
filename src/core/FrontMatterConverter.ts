@@ -1,12 +1,11 @@
 import { ObsidianRegex } from '../ObsidianRegex'
-import { Converter } from './Converter'
 import yaml from 'js-yaml'
 
 interface FrontMatter {
 	[key: string]: string;
 }
 
-export class FrontMatterConverter implements Converter {
+export class FrontMatterConverter {
 
 	private readonly fileName: string
 	private readonly resourcePath: string

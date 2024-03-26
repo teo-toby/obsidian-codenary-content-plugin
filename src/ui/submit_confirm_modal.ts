@@ -17,7 +17,7 @@ export class SubmitConfirmModal extends Modal {
 	}
 
 	validateRequiredFields() {
-		const requiredFields: Array<keyof CodenaryContent> = [ 'title', 'origin_at' ]
+		const requiredFields: Array<keyof CodenaryContent> = [ 'title', 'text' ]
 		for (const field of requiredFields) {
 			if (!this.postData[field]) {
 				new Notice(`${field.charAt(0).toUpperCase() + field.slice(1)} is required`)

@@ -2,18 +2,15 @@ import { App, Notice, PluginSettingTab, Setting } from 'obsidian'
 import CodenaryContentPlugin from './main'
 
 export interface CodenaryContentPluginSettings {
-	attachmentsFolder: string;
 	contentFolder: string;
 	userToken?: string
 }
 
 export class CodenaryContentSetting implements CodenaryContentPluginSettings {
-	attachmentsFolder: string
 	contentFolder: string
 	userToken: string
 
 	constructor() {
-		this.attachmentsFolder = 'attachments'
 		this.contentFolder = 'codenary'
 		this.userToken = ''
 	}
@@ -44,7 +41,6 @@ export class CodenaryContentSettingTab extends PluginSettingTab {
 			text: 'Path Settings',
 		})
 		this.addContentFolderSetting()
-		this.addAttachmentsFolderSetting()
 		this.containerEl.createEl('h2', {
 			text: 'User Settings',
 		})
@@ -60,18 +56,6 @@ export class CodenaryContentSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings?.userToken || '')
 				.onChange(async (value) => {
 					this.saveSettings('userToken', value)
-				}))
-	}
-
-	private addAttachmentsFolderSetting() {
-		new Setting(this.containerEl)
-			.setName('Folder to store attachments in')
-			.setDesc('Where the attachments will be stored.')
-			.addText(text => text
-				.setPlaceholder('Enter folder name')
-				.setValue(this.plugin.settings?.attachmentsFolder || 'attachments')
-				.onChange(async (value) => {
-					this.saveSettings('attachmentsFolder', value)
 				}))
 	}
 

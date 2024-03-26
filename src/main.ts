@@ -43,7 +43,6 @@ export default class CodenaryContentPlugin extends Plugin {
 
 	createCodenaryContentTemplate(plugin: CodenaryContentPlugin, title: string) {
 		const contentFolder = this.settings?.contentFolder || 'codenary'
-		const now = new Date()
 		let filename = title
 		const splitSpace = title.split(' ')
 		filename = splitSpace.join('_')
@@ -54,9 +53,6 @@ export default class CodenaryContentPlugin extends Plugin {
 		const text = `---\n${stringifyYaml({
 			title: title,
 			tags: [ 'Tag1', 'Tag2' ],
-			created_at: now,
-			content_uid: now.valueOf(),
-			techstacks: [ 'typescript', 'javascript' ],
 		})}---\n`
 
 		fs.writeFile(targetFilePath, text, (err) => {
@@ -72,20 +68,48 @@ export default class CodenaryContentPlugin extends Plugin {
 		try {
 			const activeView = this.getActiveView()
 			const file = activeView.file
-			const createdAt = file?.stat.ctime
-			console.log(file)
 			if (!file) {
 				throw new Error('There is no active file.')
 			}
-
+			const frontMatter = await this.processFrontMatter(file)
 			const post = await this.parsePostData(file)
-			console.log(post)
 			if (!post.text) {
 				throw new Error('Content is empty.')
 			}
-
 			new SubmitConfirmModal(this, post, async (post: CodenaryContent) => {
-				await this.addCodenaryContent(post)
+				const result = await this.extractTechstack(post.title + post.text)
+				if (result.success) {
+					const contentUid = frontMatter['content_uid']
+					if (contentUid) {
+						const updateResult = await this.updateCodenaryContent(contentUid, {
+							...post,
+							techstack_ids: result.techstacks,
+						})
+						if (updateResult) {
+							const newFrontMatter = stringifyYaml({
+								...frontMatter,
+								techstacks: result.techstacks,
+							})
+							const fileContent = `---\n${newFrontMatter}---\n${post.text}`
+							await file.vault.modify(file, fileContent)
+						}
+					} else {
+						const addResult = await this.addCodenaryContent({
+							...post,
+							techstack_ids: result.techstacks,
+						})
+						if (addResult) {
+							const newFrontMatter = stringifyYaml({
+								...frontMatter,
+								techstacks: result.techstacks,
+								content_uid: addResult,
+							})
+							const fileContent = `---\n${newFrontMatter}---\n${post.text}`
+							await file.vault.modify(file, fileContent)
+						}
+					}
+
+				}
 			}).open()
 		} catch (e: any) {
 			new Notice(e.toString())
@@ -111,20 +135,22 @@ export default class CodenaryContentPlugin extends Plugin {
 	}
 
 	async parsePostData(file: TFile): Promise<CodenaryContent> {
+		this.app
 		const fileContent = await this.app.vault.read(file)
 		const frontMatter = await this.processFrontMatter(file)
 		const body = await this.renderLinksToFullPath(
 		  this.removeObsidianComments(this.stripFrontmatter(fileContent)),
-		  file.path,
+			'attachments'
 		)
 		const title = frontMatter?.title
+
 		return {
-			type_id: frontMatter?.content_uid.toString(),
+			type_id: file.stat.ctime.toString(),
 			title: title,
 			text: body,
 			tags: frontMatter?.tags || [],
 			techstack_ids: [],
-			origin_at: new Date().valueOf(),
+			origin_at: file.stat.ctime || new Date().valueOf(),
 
 		}
 	}
@@ -135,9 +161,11 @@ export default class CodenaryContentPlugin extends Plugin {
 
 	stripFrontmatter(content: string) {
 		return content.trimStart().replace(frontmatterRegex, '')
-	  }
+	}
 
-	async renderLinksToFullPath(text: string, filePath: string): Promise<string> {
+	async renderLinksToFullPath(text: string, attachPath: string): Promise<string> {
+
+		const absolutePath = vaultAbsolutePath(this)
 		let result = text.toString()
 
 		const linkedFileRegex = /\[\[(.*?)\]\]/g
@@ -146,12 +174,12 @@ export default class CodenaryContentPlugin extends Plugin {
 		if (linkedFileMatches) {
 		  for (const linkMatch of linkedFileMatches) {
 				try {
-			  const textInsideBrackets = linkMatch.substring(
+
+					const textInsideBrackets = linkMatch.substring(
 						linkMatch.indexOf('[') + 2,
 						linkMatch.lastIndexOf(']') - 1,
 					)
 					let [ linkedFileName, prettyName ] = textInsideBrackets.split('|')
-
 					prettyName = prettyName || linkedFileName
 					if (linkedFileName.includes('#')) {
 						const headerSplit = linkedFileName.split('#')
@@ -159,11 +187,34 @@ export default class CodenaryContentPlugin extends Plugin {
 					}
 					const linkedFile = this.app.metadataCache.getFirstLinkpathDest(
 						getLinkpath(linkedFileName),
-						filePath,
+						attachPath,
 					)
-					if (!linkedFile) {
-						// 내부 파일 링크가 없는 경우 prettyName만 표시한다.
-						result = result.replace(linkMatch, prettyName)
+					if (linkedFile?.extension === 'md') {
+						const frontmatter = this.app.metadataCache.getFileCache(linkedFile)?.frontmatter
+						if (frontmatter && 'content_uid' in frontmatter) {
+						  const { content_uid, title } = frontmatter
+						  result = result.replace(
+								linkMatch,
+								`[${title || prettyName}](https://codenary.co.kr/contents/detail/${content_uid})`,
+						  )
+						} else {
+						  result = result.replace(linkMatch, prettyName)
+						}
+					} else {
+						if (!linkedFile) {
+							// 내부 파일 링크가 없는 경우 prettyName만 표시한다.
+							result = result.replace(linkMatch, prettyName)
+						} else {
+							const imageS3Key = await this.uploadImage(linkedFile, absolutePath)
+							if (imageS3Key) {
+								result = result.replace(linkMatch,
+									`[${linkedFile.basename}](https://static-dev.codenary.co.kr/${imageS3Key})`
+								)
+							} else {
+								result = result.replace(linkMatch, prettyName)
+							}
+
+						}
 					}
 
 				} catch (e) {
@@ -175,19 +226,67 @@ export default class CodenaryContentPlugin extends Plugin {
 		return result
 	}
 
-	removeObsidianComments(content: string) {
-		return content.replace(/^\n?%%(.+?)%%\n?$/gms, '')
-	  }
-
-	async addCodenaryContent(content: CodenaryContent) {
+	async uploadImage(file: TFile, absolutePath: string) {
 		const userToken = this.settings?.userToken
 		if (!userToken) {
 			new Notice('User Token Required')
+			return {
+				success: false,
+				techstacks: [],
+			}
 		} else {
 			const client = new CodenaryClient(userToken)
-			const result = client.publishContent(content)
-			console.log(result)
+			const s3Key = await client.imageUpload(file, absolutePath)
+			return s3Key
+		}
+
+	}
+
+	removeObsidianComments(content: string) {
+		return content.replace(/^\n?%%(.+?)%%\n?$/gms, '')
+	}
+
+	async extractTechstack(text: string) {
+		const userToken = this.settings?.userToken
+		if (!userToken) {
+			new Notice('User Token Required')
+			return {
+				success: false,
+				techstacks: [],
+			}
+		} else {
+			const client = new CodenaryClient(userToken)
+			const result = await client.getTechstacks(text)
+			return {
+				success: true,
+				techstacks: result.techstacks,
+			}
+		}
+	}
+
+	async updateCodenaryContent(contentUid: number, content: CodenaryContent): Promise<Boolean> {
+		const userToken = this.settings?.userToken
+		if (!userToken) {
+			new Notice('User Token Required')
+			return false
+		} else {
+			const client = new CodenaryClient(userToken)
+			const result = await client.updateContent(contentUid, content)
+			new Notice('Update Succces')
+			return result
+		}
+	}
+
+	async addCodenaryContent(content: CodenaryContent): Promise<number | null> {
+		const userToken = this.settings?.userToken
+		if (!userToken) {
+			new Notice('User Token Required')
+			return null
+		} else {
+			const client = new CodenaryClient(userToken)
+			const result = await client.publishContent(content)
 			new Notice('Upload Succces')
+			return result.id
 		}
 	}
 }

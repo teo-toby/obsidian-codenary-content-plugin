@@ -1,6 +1,7 @@
-import { request } from 'obsidian'
+import { TFile } from 'obsidian'
 import { CodenaryContent } from 'src/types'
 import axios from 'axios'
+import * as fs from 'fs'
 
 const API_URL = 'http://localhost:8000'
 
@@ -18,26 +19,44 @@ export class CodenaryClient {
 	}
 
 	async getTechstacks(text: string): Promise<{ techstacks: string[] }> {
-		const result = await request(
-			{ url: `${API_URL}/contents/obsidians/extract-techstacks`, method: 'POST', body: JSON.stringify({ text }) })
-		return JSON.parse(result)
+		const result = await axios.post(`${API_URL}/contents/obsidians/extract-techstacks`, {
+			text,
+		})
+		return result.data
 	}
 
 	async publishContent(post: CodenaryContent) {
-		console.log(post)
-		console.log(this.userToken)
-
 		const result = await axios.post(`${API_URL}/contents/obsidians`, {
 			...post,
 			user_token: this.userToken,
 		})
 		return result.data
-		// const result = await request({ url: `${API_URL}/contents/obsidians`, method: 'POST',
-		// 	body: JSON.stringify({
-		// 		...post,
-		// 		user_token: this.userToken,
-		// 	}) })
-		// const json = JSON.parse(result)
-		// return json
+	}
+
+	async updateContent(contentUid: number, post: CodenaryContent) {
+		const result = await axios.put(`${API_URL}/contents/obsidians/${contentUid}`, {
+			...post,
+			user_token: this.userToken,
+		})
+		return result.data
+	}
+
+	async imageUpload(file: TFile, absolutePath: string): Promise<string | null> {
+		try {
+			const result = await axios.get(`${API_URL}/contents/presigned_url`, {
+				params: {
+					type: 'editor',
+					mime_type: 'image/png',
+				},
+			})
+			const { presigned_url, key } = result.data
+			const buffer = fs.readFileSync(absolutePath + '/' + file.path)
+			await axios.put(presigned_url, buffer)
+			return key
+		} catch (error) {
+			console.error(error)
+		}
+
+		return null
 	}
 }
