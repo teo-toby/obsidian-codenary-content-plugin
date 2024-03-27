@@ -3,7 +3,7 @@ import { CodenaryContent } from 'src/types'
 import axios from 'axios'
 import * as fs from 'fs'
 
-const API_URL = 'http://localhost:8000'
+const API_URL = 'https://api.codenary.co.kr'
 
 export class CodenaryClient {
 	private readonly userToken: string
