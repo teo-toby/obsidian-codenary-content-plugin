@@ -12,13 +12,6 @@ export function vaultAbsolutePath(plugin: CodenaryContentPlugin): string {
 
 export const frontmatterRegex = /^---\n(?:((?!---)(.|\n)*?)\n)?---(\n|$)/
 
-export function makeDefaultPermlink() {
-	return new Date()
-		.toISOString()
-		.replace(/[^\w]+/g, '')
-		.toLowerCase()
-}
-
 export function stripFrontmatter(content: string) {
 	return content.trimStart().replace(frontmatterRegex, '')
 }

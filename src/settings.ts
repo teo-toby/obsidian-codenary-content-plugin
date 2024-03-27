@@ -62,7 +62,7 @@ export class CodenaryContentSettingTab extends PluginSettingTab {
 	private addContentFolderSetting() {
 		new Setting(this.containerEl)
 			.setName('Folder to store content in')
-			.setDesc('Where the contents will be stored.')
+			.setDesc('템플릿 생성시 저장될 폴더명을 입력')
 			.addText(text => text
 				.setPlaceholder('Enter folder name')
 				.setValue(this.plugin.settings?.contentFolder || 'codenary')

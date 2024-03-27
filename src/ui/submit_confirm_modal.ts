@@ -50,8 +50,7 @@ export class SubmitConfirmModal extends Modal {
 
 	async onOpen() {
 		const { contentEl } = this
-		contentEl.classList?.add('steem-plugin')
-		contentEl.createEl('h2', { text: 'Publish to Codenary' })
+		contentEl.createEl('h2', { text: '코드너리에 등록하기' })
 		const loading = CustomLoadingComponent(contentEl)
 		this.createUI(contentEl)
 		loading.remove()

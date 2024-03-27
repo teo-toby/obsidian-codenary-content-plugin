@@ -12,7 +12,7 @@ const CustomTextComponent = (
 	{ value, onChange, disabled = false, placeholder }: Props,
 ) => {
 	const textComponent = new TextComponent(containerEl)
-	textComponent.inputEl.className = 'steem-plugin__w80'
+	textComponent.inputEl.className = 'w80'
 	textComponent.setValue(value)
 	textComponent.setDisabled(disabled)
 	if (onChange) {
