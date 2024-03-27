@@ -10,7 +10,7 @@ on:
       - main
 
 env:
-  PLUGIN_NAME: o2
+  PLUGIN_NAME: plugin-codenary-content
 
 jobs:
   build:
