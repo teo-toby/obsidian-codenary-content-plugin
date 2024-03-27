@@ -22,7 +22,7 @@ export default class CodenaryContentPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'obsidian-codenary-content-publish',
-			name: 'Publish to Codenary',
+			name: 'Upload Or Update to Codenary Content',
 			callback: () => this.publishCodenaryContent(),
 		})
 		this.addCommand({
