@@ -22,12 +22,12 @@ export default class CodenaryContentPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'obsidian-codenary-content-publish',
-			name: 'Upload Or Update to Codenary Content',
+			name: 'Upload Or Update Documents',
 			callback: () => this.publishCodenaryContent(),
 		})
 		this.addCommand({
 			id: 'obsidian-codenary-content-create',
-			name: 'Create Codenary Content Template',
+			name: 'Create Template Document',
 			callback: () => this.createTemplate(),
 		})
 		this.addSettingTab(new CodenaryContentSettingTab(this.app, this))
