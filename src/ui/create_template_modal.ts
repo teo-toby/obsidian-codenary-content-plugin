@@ -54,7 +54,6 @@ export class CreateTemplateModal extends Modal {
 	}
 
 	async onOpen() {
-		console.log('++++++5')
 		const { contentEl } = this
 		contentEl.createEl('h2', { text: '컨텐츠 템플릿 생성' })
 		const loading = CustomLoadingComponent(contentEl)
