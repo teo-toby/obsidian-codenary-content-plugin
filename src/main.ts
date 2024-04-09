@@ -21,13 +21,13 @@ export default class CodenaryContentPlugin extends Plugin {
 		await this.loadSettings()
 
 		this.addCommand({
-			id: 'obsidian-codenary-content-publish',
-			name: 'Upload Or Update Documents',
+			id: 'publish-document',
+			name: 'upload or update documents',
 			callback: () => this.publishCodenaryContent(),
 		})
 		this.addCommand({
-			id: 'obsidian-codenary-content-create',
-			name: 'Create Template Document',
+			id: 'create-document',
+			name: 'create template document',
 			callback: () => this.createTemplate(),
 		})
 		this.addSettingTab(new CodenaryContentSettingTab(this.app, this))
@@ -41,7 +41,7 @@ export default class CodenaryContentPlugin extends Plugin {
 		await this.saveData(this._settings)
 	}
 
-	createCodenaryContentTemplate(plugin: CodenaryContentPlugin, title: string) {
+	async createCodenaryContentTemplate(plugin: CodenaryContentPlugin, title: string) {
 		const contentFolder = this.settings?.contentFolder || 'codenary'
 		let filename = title
 		const splitSpace = title.split(' ')
@@ -69,12 +69,12 @@ export default class CodenaryContentPlugin extends Plugin {
 			const activeView = this.getActiveView()
 			const file = activeView.file
 			if (!file) {
-				throw new Error('There is no active file.')
+				throw new Error('there is no active file.')
 			}
 			const frontMatter = await this.processFrontMatter(file)
 			const post = await this.parsePostData(file)
 			if (!post.text) {
-				throw new Error('Content is empty.')
+				throw new Error('content is empty.')
 			}
 			new SubmitConfirmModal(this, post, async (post: CodenaryContent) => {
 				const result = await this.extractTechstack(post.title + post.text)
@@ -118,8 +118,8 @@ export default class CodenaryContentPlugin extends Plugin {
 
 	async createTemplate() {
 		try {
-			new CreateTemplateModal(this, (title: string) => {
-				this.createCodenaryContentTemplate(this, title)
+			new CreateTemplateModal(this, async (title: string) => {
+				await this.createCodenaryContentTemplate(this, title)
 			}).open()
 		} catch (e: any) {
 			new Notice(e.toString())
@@ -129,7 +129,7 @@ export default class CodenaryContentPlugin extends Plugin {
 	getActiveView() {
 		const activeView = this.app.workspace.getActiveViewOfType(MarkdownView)
 		if (!activeView || !activeView.file) {
-		  throw new Error('There is no editor view found.')
+		  throw new Error('there is no editor view found.')
 		}
 		return activeView
 	}
@@ -156,7 +156,8 @@ export default class CodenaryContentPlugin extends Plugin {
 	}
 
 	async processFrontMatter(file: TFile): Promise<FrontMatterCache> {
-		return new Promise(resolve => this.app.fileManager.processFrontMatter(file, resolve))
+		const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter
+		return frontmatter || {}
 	}
 
 	stripFrontmatter(content: string) {
@@ -208,7 +209,7 @@ export default class CodenaryContentPlugin extends Plugin {
 							const imageS3Key = await this.uploadImage(linkedFile, absolutePath)
 							if (imageS3Key) {
 								result = result.replace(linkMatch,
-									`[${linkedFile.basename}](https://static-dev.codenary.co.kr/${imageS3Key})`
+									`[${linkedFile.basename}](https://static.codenary.co.kr/${imageS3Key})`
 								)
 							} else {
 								result = result.replace(linkMatch, prettyName)
@@ -229,7 +230,7 @@ export default class CodenaryContentPlugin extends Plugin {
 	async uploadImage(file: TFile, absolutePath: string) {
 		const userToken = this.settings?.userToken
 		if (!userToken) {
-			new Notice('User Token Required')
+			new Notice('user token required')
 			return {
 				success: false,
 				techstacks: [],
@@ -249,7 +250,7 @@ export default class CodenaryContentPlugin extends Plugin {
 	async extractTechstack(text: string) {
 		const userToken = this.settings?.userToken
 		if (!userToken) {
-			new Notice('User Token Required')
+			new Notice('user token required')
 			return {
 				success: false,
 				techstacks: [],
@@ -267,12 +268,12 @@ export default class CodenaryContentPlugin extends Plugin {
 	async updateCodenaryContent(contentUid: number, content: CodenaryContent): Promise<Boolean> {
 		const userToken = this.settings?.userToken
 		if (!userToken) {
-			new Notice('User Token Required')
+			new Notice('user token required')
 			return false
 		} else {
 			const client = new CodenaryClient(userToken)
 			const result = await client.updateContent(contentUid, content)
-			new Notice('Update Succces')
+			new Notice('update succces')
 			return result
 		}
 	}
@@ -280,12 +281,12 @@ export default class CodenaryContentPlugin extends Plugin {
 	async addCodenaryContent(content: CodenaryContent): Promise<number | null> {
 		const userToken = this.settings?.userToken
 		if (!userToken) {
-			new Notice('User Token Required')
+			new Notice('user token required')
 			return null
 		} else {
 			const client = new CodenaryClient(userToken)
 			const result = await client.publishContent(content)
-			new Notice('Upload Succces')
+			new Notice('upload succces')
 			return result.id
 		}
 	}

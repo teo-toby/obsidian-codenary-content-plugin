@@ -34,22 +34,30 @@ export class CodenaryContentSettingTab extends PluginSettingTab {
 
 	display(): void {
 		this.containerEl.empty()
-		this.containerEl.createEl('h1', {
-			text: 'Settings for Codenary Content plugin',
-		})
-		this.containerEl.createEl('h2', {
-			text: 'Path Settings',
-		})
+		new Setting(this.containerEl)
+			.setName('Settings').setHeading()
+
+		new Setting(this.containerEl)
+			.setName('Path').setHeading()
+		// this.containerEl.createEl('h1', {
+		// 	text: 'Settings',
+		// })
+		// this.containerEl.createEl('h2', {
+		// 	text: 'Path',
+		// })
 		this.addContentFolderSetting()
-		this.containerEl.createEl('h2', {
-			text: 'User Settings',
-		})
+		new Setting(this.containerEl)
+			.setName('User').setHeading()
+
+		// this.containerEl.createEl('h2', {
+		// 	text: 'User Info',
+		// })
 		this.addUserTokenSetting()
 	}
 
 	private addUserTokenSetting() {
 		new Setting(this.containerEl)
-			.setName('Your Codenary Account Token')
+			.setName('Your codenary account token')
 			.setDesc('마이페이지에서 생성한 토큰 입력')
 			.addText(text => text
 				.setPlaceholder('Enter user token')

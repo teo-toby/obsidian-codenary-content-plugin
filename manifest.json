@@ -3,7 +3,7 @@
 	"name": "Codenary Content",
 	"version": "1.0.5",
 	"minAppVersion": "0.15.0",
-	"description": "A plugin for publishing Obsidian document to Codenary my contents",
+	"description": "A plugin for publishing to Codenary my contents",
 	"author": "gskim",
 	"authorUrl": "https://github.com/gskim",
 	"isDesktopOnly": true
